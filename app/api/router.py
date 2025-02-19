@@ -1,8 +1,10 @@
 from fastapi import APIRouter, UploadFile, HTTPException, File
 from typing import Optional, List
 import uuid
+from io import BytesIO
 from app.types.query import QueryRequest, QueryResponse
-
+from app.core.document_ingestor import DocumentIngestor
+from app.utils.dependencies import weaviate_init, embedding_generator_init
 
 router = APIRouter()
 
@@ -27,13 +29,30 @@ async def upload_file(file: UploadFile = File(...)):
             raise HTTPException(
                 status_code=400, detail=f"Unsupported file extension. Only {', '.join(allowed_extensions)} are allowed.")
 
-        # TODO: ingest the file
+        # Initialize the ingestor
+        ingestor = DocumentIngestor(
+            store_client=weaviate_init(),
+            embedding_generator=embedding_generator_init()
+        )
+
+
+        content = await file.read()
+        file_obj = BytesIO(content)
+        file_obj.name = file.filename
+
+        # Process the file
+        ingestor.process_document(
+            file=file_obj,
+            filename=file.filename,
+            doc_id=doc_id
+        )
 
         return {
             "doc_id": doc_id,
             "filename": file.filename,
             "file_extension": file_extension,
-            "file_size": file.size
+            "file_size": file.size,
+            "message": "Document processed successfully"
         }
     except Exception as e:
         raise HTTPException(
