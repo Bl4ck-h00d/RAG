@@ -47,8 +47,8 @@ This system integrates a **Retrieval-Augmented Generation (RAG)** architecture w
 
 #### Clone the repository
 ```bash
-git clone https://github.com/your-repo/rag-json-aggregation.git
-cd rag-json-aggregation
+git clone git@github.com:Bl4ck-h00d/RAG.git
+cd RAG
 ```
 
 #### Create virtual environment:
