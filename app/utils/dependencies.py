@@ -29,7 +29,7 @@ def weaviate_init() -> weaviate.Client:
                     ),
                     Property(
                         name="json",
-                        data_type=DataType.OBJECT_ARRAY,
+                        data_type=DataType.TEXT,
                         description="JSON"
                     ),
                     Property(

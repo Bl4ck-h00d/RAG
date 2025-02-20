@@ -59,7 +59,7 @@ source venv/bin/activate
 
 #### Install dependencies
 ```bash
-pip install -r requirements.txt
+pip install fastapi uvicorn weaviate-client openai pdfplumber python-docx pydantic python-multipart torch sentence_transformers
 ```
 
 
