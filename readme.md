@@ -84,7 +84,7 @@ The API provides the following endpoints:
 * URL: ```POST /upload```
 
 ```bash
-curl -X POST -F "file=@/path/to/your/document.pdf" http://localhost:8000/upload
+curl -X POST -F "file=@/path/to/your/document.pdf" http://51.20.182.187:8000/upload
 ```
 
 ### Query Documents
@@ -94,33 +94,36 @@ curl -X POST -F "file=@/path/to/your/document.pdf" http://localhost:8000/upload
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   -d '{"query": "your search query", "limit": 5}' \
-  http://localhost:8000/query
+  http://51.20.182.187:8000/query
 ```
 
 ### Aggregate JSON Field
+
+### Note
+
+* ```doc_id``` is required for aggregation operations to specify a particular document 
+
 
 * URL: ```GET /aggregate/{field_path}```
 
 ```bash
 # Count aggregation
-curl "http://localhost:8000/aggregate/json.customer_id?doc_id=<doc_id>&operation=count"
+curl "http://51.20.182.187:8000/aggregate/json.customer_id?doc_id=<doc_id>&operation=count"
 
 # Text occurrences
-curl "http://localhost:8000/aggregate/json.membership?doc_id=<doc_id>&operation=text_occurrences"
+curl "http://51.20.182.187:8000/aggregate/json.membership?doc_id=<doc_id>&operation=text_occurrences"
 
 # Numeric operations
-curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=sum"
-curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=mean"
-curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=median"
-curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=min"
-curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=max"
+curl "http://51.20.182.187:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=sum"
+curl "http://51.20.182.187:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=mean"
+curl "http://51.20.182.187:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=median"
+curl "http://51.20.182.187:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=min"
+curl "http://51.20.182.187:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=max"
 
 ```
 
 
-### Notes
 
-* Use ```doc_id``` to specify a particular document
 
 
 
