@@ -20,31 +20,64 @@ class DocumentIngestor:
         file_type = filename.split('.')[-1].lower()
         metadata = self._extract_metadata(file, file_type)
         content = self._extract_content(file, file_type)
-        
-        # Chunkify the content
-        chunks = self._chunkify_content(content)
+        if file_type == 'json':
+            # For JSON files, parse and store as JSON string
+            try:
+                if isinstance(content, str):
+                    json_content = json.loads(content)
+                else:
+                    json_content = content
 
-        # Generate embeddings for each chunk
-        for idx, chunk in enumerate(chunks):
-            embedding = self.embedding_generator.generate(chunk)
-            document = self.store_client.collections.get("Document")
-            
-            document.data.insert(
-                properties={
-                    "content": chunk,
-                    "json": None,  # No JSON for non-JSON files
-                    "metadata": json.dumps({
-                        "filename": filename,
-                        "total_chunks": len(chunks),
-                        **metadata
-                    }),
-                    "doc_id": doc_id,
-                    "chunk_id": idx,
-                    "file_type": file_type,
-                },
-                vector=embedding
-            )
-            
+                # Convert JSON to string for storage
+                json_str = json.dumps(json_content)
+
+                # Generate embedding for the JSON content
+                embedding = self.embedding_generator.generate(json_str)
+
+                # Store the JSON data as string
+                document = self.store_client.collections.get("Document")
+                document.data.insert(
+                    properties={
+                        "content": json_str,
+                        "json": json_str,  # Store as JSON string
+                        "metadata": json.dumps({
+                            "filename": filename,
+                            "total_records": len(json_content) if isinstance(json_content, list) else 1,
+                            **metadata
+                        }),
+                        "doc_id": doc_id,
+                        "chunk_id": 0,
+                        "file_type": file_type,
+                    },
+                    vector=embedding
+                )
+            except Exception as e:
+                raise e
+        else:
+            # For non-JSON files, use the original chunking logic
+            # Chunkify the content
+            chunks = self._chunkify_content(content)
+
+            # Generate embeddings for each chunk
+            for idx, chunk in enumerate(chunks):
+                embedding = self.embedding_generator.generate(chunk)
+                document = self.store_client.collections.get("Document")
+
+                document.data.insert(
+                    properties={
+                        "content": chunk,
+                        "json": None,  # No JSON for non-JSON files
+                        "metadata": json.dumps({
+                            "filename": filename,
+                            "total_chunks": len(chunks),
+                            **metadata
+                        }),
+                        "doc_id": doc_id,
+                        "chunk_id": idx,
+                        "file_type": file_type,
+                    },
+                    vector=embedding
+                )
 
     def _extract_metadata(self, file: BinaryIO, file_type: str) -> Dict[str, Any]:
         """

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, HTTPException, File
+from fastapi import APIRouter, UploadFile, HTTPException, File, Query
 from typing import Optional, List
 import uuid
 from io import BytesIO
@@ -6,6 +6,7 @@ from app.types.query import QueryRequest, QueryResponse
 from app.core.document_ingestor import DocumentIngestor
 from app.utils.dependencies import weaviate_init, embedding_generator_init
 from app.core.rag import RAGSystem
+from app.core.json_aggregator import JSONAggregator, AggregationOperationType
 
 router = APIRouter()
 
@@ -88,6 +89,36 @@ async def query_documents(request: QueryRequest):
             detail=f"Error querying documents: {str(e)}"
         )
 
-    # TODO: implement query logic
 
-    return {}
+@router.get("/aggregate/{field_path}")
+async def aggregate_json_field(
+    field_path: str,
+    operation: AggregationOperationType,
+    doc_id: Optional[str] = None,
+    min_occurrences: Optional[str] = "1",
+    distance: Optional[float] = Query(None, ge=0.0, le=1.0),
+    query_text: Optional[str] = None,
+):
+    """ 
+    Perform aggregation operations on json fields
+    """
+
+    try:
+        # Initialize JSONAggregator
+        processor = JSONAggregator(
+            weaviate_init(), embedding_generator=embedding_generator_init())
+        result = processor.aggregate(
+            field_path=field_path,
+            operation=operation,
+            doc_id=doc_id,
+            min_occurrences=int(min_occurrences),
+            distance=distance,
+            query_text=query_text
+        )
+        return result
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error aggregating JSON field: {str(e)}"
+        )
