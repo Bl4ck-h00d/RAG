@@ -5,6 +5,7 @@ from io import BytesIO
 from app.types.query import QueryRequest, QueryResponse
 from app.core.document_ingestor import DocumentIngestor
 from app.utils.dependencies import weaviate_init, embedding_generator_init
+from app.core.rag import RAGSystem
 
 router = APIRouter()
 
@@ -34,7 +35,6 @@ async def upload_file(file: UploadFile = File(...)):
             store_client=weaviate_init(),
             embedding_generator=embedding_generator_init()
         )
-
 
         content = await file.read()
         file_obj = BytesIO(content)
@@ -66,6 +66,27 @@ async def query_documents(request: QueryRequest):
     """
     Query the knowledge base for relevant documents based on the provided search terms.
     """
+
+    try:
+        # Initialize the RAG system
+        rag_system = RAGSystem(
+            store_client=weaviate_init(),
+            embedding_generator=embedding_generator_init()
+        )
+
+        # Query the database
+        results = rag_system.query(
+            query=request.query,
+            top_k=request.limit if request.limit else 5
+        )
+
+        return QueryResponse(query=request.query, results=results)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error querying documents: {str(e)}"
+        )
 
     # TODO: implement query logic
 
