@@ -103,19 +103,38 @@ curl -X POST -H "Content-Type: application/json" \
 
 ```bash
 # Count aggregation
-curl "http://localhost:8000/aggregate/json.items[].category?operation=count"
+curl "http://localhost:8000/aggregate/json.customer_id?doc_id=<doc_id>&operation=count"
 
 # Text occurrences
-curl "http://localhost:8000/aggregate/json.tags[]?operation=text_occurrences&min_occurrences=2"
+curl "http://localhost:8000/aggregate/json.membership?doc_id=<doc_id>&operation=text_occurrences"
 
 # Numeric operations
-curl "http://localhost:8000/aggregate/json.items[].price?operation=sum"
-curl "http://localhost:8000/aggregate/json.items[].price?operation=mean"
-curl "http://localhost:8000/aggregate/json.items[].price?operation=median"
-curl "http://localhost:8000/aggregate/json.items[].price?operation=min"
-curl "http://localhost:8000/aggregate/json.items[].price?operation=max"
+curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=sum"
+curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=mean"
+curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=median"
+curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=min"
+curl "http://localhost:8000/aggregate/json.total_spent?doc_id=<doc_id>&operation=max"
 
 ```
+
+
+### Notes
+
+* Use ```doc_id``` to specify a particular document
+
+
+
+### WIP: Aggregation with Query Text
+
+
+```bash
+curl "http://localhost:8000/aggregate/json.membership?doc_id=<doc_id>&operation=count&query_text=\"Gold\""
+
+```
+
+This should match the query_text with the values in the json field and return the count of the matching values.
+
+
 
 
 ## Supported Operations for JSON Aggregation
