@@ -5,6 +5,9 @@ import pdfplumber
 from pdfminer.high_level import extract_text
 import json
 from docx import Document
+from PIL import Image
+import pytesseract
+import pdf2image
 
 
 class DocumentIngestor:
@@ -13,7 +16,7 @@ class DocumentIngestor:
         self.embedding_generator = embedding_generator
 
     def process_document(self, file: BinaryIO, filename: str, doc_id: str):
-        """ 
+        """
         Process the document and ingest it into the database
         """
 
@@ -86,7 +89,8 @@ class DocumentIngestor:
 
         metadata = {
             "file_type": file_type,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "extraction_method": "unknown"
         }
 
         try:
@@ -95,16 +99,30 @@ class DocumentIngestor:
                     pos = file.tell()
                     file.seek(0)
 
-                    with pdfplumber.open(file) as pdf:
-                        pdf_meta = pdf.metadata or {}
+                    try:
+                        with pdfplumber.open(file) as pdf:
+                            pdf_meta = pdf.metadata or {}
+                            metadata.update({
+                                "title": pdf_meta.get("Title", "Untitled"),
+                                "author": pdf_meta.get("Author", "Unknown"),
+                                "page_count": len(pdf.pages),
+                                "creation_date": pdf_meta.get("CreationDate", "Unknown"),
+                                "modified_date": pdf_meta.get("ModDate", "Unknown"),
+                            })
+                    except Exception as e:
+                        print(f"Error reading PDF metadata: {e}")
                         metadata.update({
-                            "file_type": file_type,
-                            "title": pdf_meta.get("Title", "Untitled"),
-                            "author": pdf_meta.get("Author", "Unknown"),
-                            "page_count": len(pdf.pages),
-                            "creation_date": pdf_meta.get("CreationDate", "Unknown"),
-                            "modified_date": pdf_meta.get("ModDate", "Unknown"),
+                            "title": "Unknown",
+                            "author": "Unknown",
+                            "page_count": 0,
+                            "error": str(e)
                         })
+
+                    # Add extraction method to metadata
+                    metadata["extraction_method"] = self.last_extraction_method or "unknown"
+                    if self.last_extraction_method == "OCR":
+                        metadata["ocr_processed"] = True
+
                     file.seek(pos)
 
                 case "docx":
@@ -154,7 +172,52 @@ class DocumentIngestor:
 
         match file_type:
             case "pdf":
-                return extract_text(file)
+                self.last_extraction_method = None  # Reset for each extraction
+                text_content = ""
+
+                # Validate PDF first
+                try:
+                    # Try to read as PDF first
+                    file.seek(0)
+                    with pdfplumber.open(file) as pdf:
+                        text_content = "\n".join(
+                            page.extract_text() or "" for page in pdf.pages)
+                except Exception as e:
+                    print(f"PDF text extraction failed: {e}")
+                    text_content = ""
+
+                # If no text is found or text is very short, try OCR
+                if not text_content or len(text_content.strip()) < 50:
+                    try:
+                        file.seek(0)
+                        images = pdf2image.convert_from_bytes(
+                            file.read(),
+                            fmt='jpeg',
+                            dpi=300
+                        )
+
+                        text_contents = []
+                        for image in images:
+                            text = pytesseract.image_to_string(image)
+                            if text.strip():  # Only add non-empty text
+                                text_contents.append(text)
+
+                        if text_contents:
+                            text_content = "\n".join(text_contents)
+                            self.last_extraction_method = "OCR"
+                        else:
+                            self.last_extraction_method = "FAILED"
+                            text_content = "No text could be extracted from this document."
+
+                    except Exception as e:
+                        print(f"OCR extraction failed: {e}")
+                        self.last_extraction_method = "FAILED"
+                        text_content = "Failed to process document."
+                else:
+                    self.last_extraction_method = "text_only"
+
+                file.seek(0)  # Reset file pointer
+                return text_content
 
             case "docx":
                 doc = Document(file)

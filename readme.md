@@ -35,6 +35,46 @@ This system integrates a **Retrieval-Augmented Generation (RAG)** architecture w
 3. Queries can be performed using **semantic search**.
 4. JSON aggregations can be performed on stored documents.
 
+## Document Processing Details
+
+### PDF Processing Capabilities
+
+The system handles both text-based and image-based PDFs through a sophisticated dual-processing approach:
+
+#### Text Extraction
+1. **Primary Method**: Uses `pdfplumber` for text-based PDFs
+2. **Fallback Method**: Automatically switches to OCR if:
+   - Text extraction fails
+   - Extracted text is too short (<50 characters)
+   - PDF contains primarily images
+
+#### OCR Processing
+- Uses `pytesseract` and `pdf2image` for image-based PDFs
+- Converts PDF pages to high-resolution images
+- Performs OCR on each page individually
+- Combines results into a single searchable text
+
+### Prerequisites for OCR
+
+#### System Dependencies
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y \
+    tesseract-ocr \
+    poppler-utils
+
+# MacOS
+brew install tesseract
+brew install poppler
+```
+
+#### Python Dependencies
+```bash
+pip install pytesseract pdf2image Pillow
+```
+
+
 ## Installation
 
 ### Prerequisites
@@ -59,7 +99,7 @@ source venv/bin/activate
 
 #### Install dependencies
 ```bash
-pip install fastapi uvicorn weaviate-client openai pdfplumber python-docx pydantic python-multipart torch sentence_transformers
+pip install fastapi uvicorn weaviate-client openai pdfplumber python-docx pydantic python-multipart torch sentence_transformers pdf2image Pillow pytesseract
 ```
 
 
