@@ -11,7 +11,7 @@ from app.core.json_aggregator import JSONAggregator, AggregationOperationType
 router = APIRouter()
 
 
-@router.post('/upload')
+@router.get('/upload')
 async def upload_file(file: UploadFile = File(...)):
     """
     Upload a file to the knowledge base.
